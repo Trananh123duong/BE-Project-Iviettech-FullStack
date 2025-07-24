@@ -2,11 +2,13 @@ import { Category } from 'src/categories/entities/category.entity';
 import { Chapter } from 'src/chapters/entities/chapter.entity';
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinTable,
   ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
@@ -15,7 +17,7 @@ export class Story {
   id: number;
 
   @Column()
-  title: string;
+  name: string;
 
   @Column()
   author: string;
@@ -32,10 +34,26 @@ export class Story {
   @Column({ type: 'text' })
   description: string;
 
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
   @OneToMany(() => Chapter, (chapter) => chapter.story, { cascade: true })
   chapters: Chapter[];
 
   @ManyToMany(() => Category, (category) => category.stories, { cascade: true })
-  @JoinTable()
+  @JoinTable({
+    name: 'story_category',
+    joinColumn: {
+      name: 'story_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'category_id',
+      referencedColumnName: 'id',
+    },
+  })
   categories: Category[];
 }
