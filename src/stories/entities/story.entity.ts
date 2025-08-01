@@ -1,3 +1,4 @@
+import { Expose } from 'class-transformer';
 import { Category } from 'src/categories/entities/category.entity';
 import { Chapter } from 'src/chapters/entities/chapter.entity';
 import {
@@ -56,4 +57,10 @@ export class Story {
     },
   })
   categories: Category[];
+
+  @Expose()
+  get thumbnail(): string {
+    const domain = process.env.DOMAIN || 'http://localhost:3000';
+    return `${domain}/uploads/thumbnails/${this.id}.jpg`;
+  }
 }

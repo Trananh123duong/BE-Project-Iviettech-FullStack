@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CategoriesModule } from './categories/categories.module';
 import { ChaptersModule } from './chapters/chapters.module';
-import { StoriesModule } from './stories/stories.module';
 import { CrawlerModule } from './crawler/crawler.module';
+import { StoriesModule } from './stories/stories.module';
 
 @Module({
   imports: [
@@ -30,6 +32,15 @@ import { CrawlerModule } from './crawler/crawler.module';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true, // Dùng khi dev
       }),
+    }),
+
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads', 'thumbnails'),
+      serveRoot: '/uploads/thumbnails',
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads', 'chapters'),
+      serveRoot: '/uploads/chapters',
     }),
 
     ScheduleModule.forRoot(),
