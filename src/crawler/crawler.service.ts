@@ -12,6 +12,8 @@ import { Repository } from 'typeorm';
 import { ChapterApiResponse } from './dto/chapter-detail.dto';
 import { StoryDetailResponse } from './dto/story-detail.dto';
 import { StoryListResponse } from './dto/story-list.dto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class CrawlerService {
@@ -69,7 +71,8 @@ export class CrawlerService {
         return;
       }
 
-      const categoryNames: string[] = storyDetail.item.category?.map((c) => c.name) || [];
+      const categoryNames: string[] =
+        storyDetail.item.category?.map((c) => c.name) || [];
       const categories: Category[] = [];
       for (const name of categoryNames) {
         let category = await this.categoryRepo.findOne({ where: { name } });
@@ -80,14 +83,61 @@ export class CrawlerService {
         categories.push(category);
       }
 
-      const story = this.storyRepo.create({
+      let story = this.storyRepo.create({
         name: storyDetail.item.name,
         author: storyDetail.item.author.join(', '),
         description: storyDetail.item.content,
         status: storyDetail.item.status,
         categories,
       });
-      await this.storyRepo.save(story);
+      story = await this.storyRepo.save(story);
+
+      const thumbStory = storyDetail.seoOnPage.seoSchema.image;
+
+      if (thumbStory) {
+        const thumbnailFolder = path.join(
+          __dirname,
+          '..',
+          '..',
+          'uploads',
+          'thumbnails',
+        );
+
+        if (!fs.existsSync(thumbnailFolder)) {
+          fs.mkdirSync(thumbnailFolder, { recursive: true });
+        }
+
+        const imageExtension = path.extname(thumbStory).split('?')[0] || '.jpg';
+        const imageName = `${story.id}${imageExtension}`;
+        const imagePath = path.join(thumbnailFolder, imageName);
+
+        try {
+          const response = await axios.get(thumbStory, {
+            responseType: 'stream',
+            headers: {
+              'User-Agent': 'Mozilla/5.0',
+              Referer: 'https://otruyenapi.com',
+            },
+          });
+
+          const writer = fs.createWriteStream(imagePath);
+          (response.data as NodeJS.ReadableStream).pipe(writer);
+
+          await new Promise<void>((resolve, reject) => {
+            writer.on('finish', () => resolve());
+            writer.on('error', reject);
+          });
+        } catch (err: unknown) {
+          if (err instanceof Error) {
+            console.error(
+              `❌ Không thể tải ảnh thumbnail từ ${thumbStory}:`,
+              err.message,
+            );
+          } else {
+            console.error(`❌ Lỗi không xác định khi tải ảnh thumbnail`, err);
+          }
+        }
+      }
 
       for (const server of storyDetail.item.chapters || []) {
         const chapters = server.server_data || [];

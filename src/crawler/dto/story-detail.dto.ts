@@ -17,13 +17,22 @@ export interface StoryItem {
   slug: string;
   content: string;
   status: string;
-  author: string[]; // vì bạn join(', ') lại
+  author: string[];
   category: CategoryItem[];
   chapters: ChapterServer[];
 }
 
+export interface SeoSchema {
+  image: string;
+}
+
+export interface SeoOnPage {
+  seoSchema: SeoSchema;
+}
+
 export interface StoryDetailData {
   item: StoryItem;
+  seoOnPage: SeoOnPage;
 }
 
 export interface StoryDetailResponse {
